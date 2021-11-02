@@ -1,0 +1,266 @@
+Install Compose on Linux systems
+On Linux, you can download the Docker Compose binary from the Compose repository release page on GitHub. Follow the instructions from the link, which involve running the curl command in your terminal to download the binaries. These step-by-step instructions are also included below.
+
+For alpine, the following dependency packages are needed: py-pip, python3-dev, libffi-dev, openssl-dev, gcc, libc-dev, rust, cargo and make.
+
+Run this command to download the current stable release of Docker Compose:
+
+ sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+To install a different version of Compose, substitute 1.29.2 with the version of Compose you want to use.
+
+If you have problems installing with curl, see Alternative Install Options tab above.
+
+Apply executable permissions to the binary:
+
+ sudo chmod +x /usr/local/bin/docker-compose
+ 
+ ----------------------------------openssl-------------------
+ Steps to download, compile, and install are as follows (I'm installing version 1.0.1g below; please replace "1.0.1g" with your version number):
+
+Step – 1 : Downloading OpenSSL:
+
+Run the command as below :
+
+$ wget http://www.openssl.org/source/openssl-1.0.1g.tar.gz
+
+Also, download the MD5 hash to verify the integrity of the downloaded file for just varifacation purpose. In the same folder where you have downloaded the OpenSSL file from the website :
+
+$ wget http://www.openssl.org/source/openssl-1.0.1g.tar.gz.md5
+$ md5sum openssl-1.0.1g.tar.gz
+$ cat openssl-1.0.1g.tar.gz.md5
+
+Step – 2 : Extract files from the downloaded package:
+
+$ tar -xvzf openssl-1.0.1g.tar.gz
+
+Now, enter the directory where the package is extracted like here is openssl-1.0.1g
+
+$ cd openssl-1.0.1g
+
+Step – 3 : Configuration OpenSSL
+
+Run below command with optional condition to set prefix and directory where you want to copy files and folder.
+
+$ ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl
+
+You can replace “/usr/local/openssl” with the directory path where you want to copy the files and folders. But make sure while doing this steps check for any error message on terminal.
+
+Step – 4 : Compiling OpenSSL
+
+To compile openssl you will need to run 2 command : make, make install as below :
+
+$ make
+
+Note: check for any error message for verification purpose.
+
+Step -5 : Installing OpenSSL:
+
+$ sudo make install
+
+Or without sudo,
+
+$ make install
+
+That’s it. OpenSSL has been successfully installed. You can run the version command to see if it worked or not as below :
+
+$ /usr/local/openssl/bin/openssl version
+
+OpenSSL 1.0.1g 7 Apr 2014
+
+Share
+Improve this answer
+Follow
+edited Feb 19 '20 at 10:45
+---------------------------------------------
+Download and Unpack the Installer
+Go to the Harbor releases page.
+
+Download either the online or offline installer for the version you want to install.
+
+Optionally download the corresponding *.asc file to verify that the package is genuine.
+
+The *.asc file is an OpenPGP key file. Perform the following steps to verify that the downloaded bundle is genuine.
+
+Obtain the public key for the *.asc file.
+
+gpg --keyserver hkps://keyserver.ubuntu.com --receive-keys 644FF454C0B4115C
+You should see the message public key "Harbor-sign (The key for signing Harbor build) <jiangd@vmware.com>" imported
+
+Verify that the package is genuine by running one of the following commands.
+
+Online installer:
+
+gpg -v --keyserver hkps://keyserver.ubuntu.com --verify harbor-online-installer-version.tgz.asc
+Offline installer:
+
+gpg -v --keyserver hkps://keyserver.ubuntu.com --verify harbor-offline-installer-version.tgz.asc
+The gpg command verifies that the signature of the bundle matches that of the *.asc key file. You should see confirmation that the signature is correct.
+
+gpg: armor header: Version: GnuPG v1
+gpg: assuming signed data in 'harbor-online-installer-v2.0.2.tgz'
+gpg: Signature made Tue Jul 28 09:49:20 2020 UTC
+gpg:                using RSA key 644FF454C0B4115C
+gpg: using pgp trust model
+gpg: Good signature from "Harbor-sign (The key for signing Harbor build) <jiangd@vmware.com>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 7722 D168 DAEC 4578 06C9  6FF9 644F F454 C0B4 115C
+gpg: binary signature, digest algorithm SHA1, key algorithm rsa4096
+Use tar to extract the installer package:
+
+Online installer:
+
+bash $ tar xzvf harbor-online-installer-version.tgz
+Offline installer:
+
+bash $ tar xzvf harbor-offline-installer-version.tgz
+Next Steps
+----------------Configure HTTPS Access to Harbor---------------------
+Generate a Certificate Authority Certificate
+In a production environment, you should obtain a certificate from a CA. In a test or development environment, you can generate your own CA. To generate a CA certficate, run the following commands.
+
+Generate a CA certificate private key.
+
+openssl genrsa -out ca.key 4096
+Generate the CA certificate.
+
+Adapt the values in the -subj option to reflect your organization. If you use an FQDN to connect your Harbor host, you must specify it as the common name (CN) attribute.
+
+openssl req -x509 -new -nodes -sha512 -days 3650 \
+ -subj "/C=CN/ST=Beijing/L=Beijing/O=example/OU=Personal/CN=yourdomain.com" \
+ -key ca.key \
+ -out ca.crt
+Generate a Server Certificate
+The certificate usually contains a .crt file and a .key file, for example, yourdomain.com.crt and yourdomain.com.key.
+
+Generate a private key.
+
+openssl genrsa -out yourdomain.com.key 4096
+Generate a certificate signing request (CSR).
+
+Adapt the values in the -subj option to reflect your organization. If you use an FQDN to connect your Harbor host, you must specify it as the common name (CN) attribute and use it in the key and CSR filenames.
+
+openssl req -sha512 -new \
+    -subj "/C=CN/ST=Beijing/L=Beijing/O=example/OU=Personal/CN=yourdomain.com" \
+    -key yourdomain.com.key \
+    -out yourdomain.com.csr
+Generate an x509 v3 extension file.
+
+Regardless of whether you’re using either an FQDN or an IP address to connect to your Harbor host, you must create this file so that you can generate a certificate for your Harbor host that complies with the Subject Alternative Name (SAN) and x509 v3 extension requirements. Replace the DNS entries to reflect your domain.
+
+cat > v3.ext <<-EOF
+authorityKeyIdentifier=keyid,issuer
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1=yourdomain.com
+DNS.2=yourdomain
+DNS.3=hostname
+EOF
+Use the v3.ext file to generate a certificate for your Harbor host.
+
+Replace the yourdomain.com in the CRS and CRT file names with the Harbor host name.
+
+openssl x509 -req -sha512 -days 3650 \
+    -extfile v3.ext \
+    -CA ca.crt -CAkey ca.key -CAcreateserial \
+    -in yourdomain.com.csr \
+    -out yourdomain.com.crt
+Provide the Certificates to Harbor and Docker
+After generating the ca.crt, yourdomain.com.crt, and yourdomain.com.key files, you must provide them to Harbor and to Docker, and reconfigure Harbor to use them.
+
+Copy the server certificate and key into the certficates folder on your Harbor host.
+
+cp yourdomain.com.crt /data/cert/
+cp yourdomain.com.key /data/cert/
+Convert yourdomain.com.crt to yourdomain.com.cert, for use by Docker.
+
+The Docker daemon interprets .crt files as CA certificates and .cert files as client certificates.
+
+openssl x509 -inform PEM -in yourdomain.com.crt -out yourdomain.com.cert
+Copy the server certificate, key and CA files into the Docker certificates folder on the Harbor host. You must create the appropriate folders first.
+
+cp yourdomain.com.cert /etc/docker/certs.d/yourdomain.com/
+cp yourdomain.com.key /etc/docker/certs.d/yourdomain.com/
+cp ca.crt /etc/docker/certs.d/yourdomain.com/
+If you mapped the default nginx port 443 to a different port, create the folder /etc/docker/certs.d/yourdomain.com:port, or /etc/docker/certs.d/harbor_IP:port.
+
+Restart Docker Engine.
+
+systemctl restart docker
+You might also need to trust the certificate at the OS level. See Troubleshooting Harbor Installation for more information.
+
+The following example illustrates a configuration that uses custom certificates.
+
+/etc/docker/certs.d/
+    └── yourdomain.com:port
+       ├── yourdomain.com.cert  <-- Server certificate signed by CA
+       ├── yourdomain.com.key   <-- Server key signed by CA
+       └── ca.crt               <-- Certificate authority that signed the registry certificate
+Deploy or Reconfigure Harbor
+If you have not yet deployed Harbor, see Configure the Harbor YML File for information about how to configure Harbor to use the certificates by specifying the hostname and https attributes in harbor.yml.
+
+If you already deployed Harbor with HTTP and want to reconfigure it to use HTTPS, perform the following steps.
+
+Run the prepare script to enable HTTPS.
+
+Harbor uses an nginx instance as a reverse proxy for all services. You use the prepare script to configure nginx to use HTTPS. The prepare is in the Harbor installer bundle, at the same level as the install.sh script.
+
+./prepare
+If Harbor is running, stop and remove the existing instance.
+
+Your image data remains in the file system, so no data is lost.
+
+docker-compose down -v
+Restart Harbor:
+
+docker-compose up -d
+Verify the HTTPS Connection
+After setting up HTTPS for Harbor, you can verify the HTTPS connection by performing the following steps.
+
+Open a browser and enter https://yourdomain.com. It should display the Harbor interface.
+
+Some browsers might show a warning stating that the Certificate Authority (CA) is unknown. This happens when using a self-signed CA that is not from a trusted third-party CA. You can import the CA to the browser to remove the warning.
+
+On a machine that runs the Docker daemon, check the /etc/docker/daemon.json file to make sure that the -insecure-registry option is not set for https://yourdomain.com.
+
+Log into Harbor from the Docker client.
+
+docker login yourdomain.com
+If you’ve mapped nginx 443 port to a different port,add the port in the login command.
+
+docker login yourdomain.com:port
+--------------------------Configure the Harbor YML File---------
+Configuring a Storage Backend
+By default Harbor uses local storage for the registry, but you can optionally configure the storage_service setting so that Harbor uses external storage. For information about how to configure the storage backend of a registry for different storage providers, see the Registry Configuration Reference in the Docker documentation. For example, if you use Openstack Swift as your storage backend, the parameters might resemble the following:
+
+storage_service:
+  ca_bundle:
+  swift:
+    username: admin
+    password: ADMIN_PASS
+    authurl: http://keystone_addr:35357/v3/auth
+    tenant: admin
+    domain: default
+    region: regionOne
+    container: docker_images"
+  redirect:
+    disable: false
+What to Do Next
+
+-----------------------
+Default installation without Notary, Trivy, or Chart Repository Service
+The default Harbor installation does not include Notary or Trivy service. Run the following command
+
+sudo ./install.sh
+If the installation succeeds, you can open a browser to visit the Harbor interface at http://reg.yourdomain.com, changing reg.yourdomain.com to the hostname that you configured in harbor.yml. If you did not change them in harbor.yml, the default administrator username and password are admin and Harbor12345.
+
+Log in to the admin portal and create a new project, for example, myproject. You can then use Docker commands to log in to Harbor, tag images, and push them to Harbor.
+
+docker login reg.yourdomain.com
+docker push reg.yourdomain.com/myproject/myrepo:mytag
+If your installation of Harbor uses HTTPS, you must provide the Harbor certificates to the Docker client. For information, see Configure HTTPS Access to Harbor.
+If your installation of Harbor uses HTTP, you must add the option --insecure-registry to your client’s Docker daemon and restart the Docker service. For more information, see Connecting to Harbor via HTTP below.
